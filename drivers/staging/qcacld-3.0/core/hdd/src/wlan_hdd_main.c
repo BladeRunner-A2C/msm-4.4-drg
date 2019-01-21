@@ -222,6 +222,7 @@ static unsigned int dev_num = 1;
 static struct cdev wlan_hdd_state_cdev;
 static struct class *class;
 static dev_t device;
+static bool hdd_loaded = false;
 
 #ifdef MULTI_IF_NAME
 #define WLAN_LOADER_NAME "boot_" MULTI_IF_NAME
@@ -16135,6 +16136,18 @@ static int __hdd_driver_mode_change(struct hdd_context *hdd_ctx,
 
 	hdd_info("Driver mode changing to %d", next_mode);
 
+static int hdd_driver_load(void);
+static ssize_t wlan_hdd_state_ctrl_param_write(struct file *filp,
+						const char __user *user_buf,
+						size_t count,
+						loff_t *f_pos)
+{
+	char buf[3];
+	static const char wlan_off_str[] = "OFF";
+	static const char wlan_on_str[] = "ON";
+	int ret;
+	unsigned long rc;
+
 	errno = wlan_hdd_validate_context(hdd_ctx);
 	if (errno)
 		return errno;
@@ -16163,6 +16176,22 @@ static int __hdd_driver_mode_change(struct hdd_context *hdd_ctx,
 			is_mode_change_psoc_idle_shutdown = false;
 			hdd_err("Stop wlan modules failed");
 			return errno;
+
+	if (!hdd_loaded) {
+		if (hdd_driver_load()) {
+			pr_err("%s: Failed to init hdd module\n", __func__);
+			goto exit;
+		}
+	}
+
+	if (!cds_is_driver_loaded()) {
+		init_completion(&wlan_start_comp);
+		rc = wait_for_completion_timeout(&wlan_start_comp,
+				msecs_to_jiffies(HDD_WLAN_START_WAIT_TIME));
+		if (!rc) {
+			hdd_alert("Timed-out waiting in wlan_hdd_state_ctrl_param_write");
+			ret = -EINVAL;
+			return ret;
 		}
 	}
 
@@ -16339,16 +16368,10 @@ static int hdd_driver_load(void)
 
 	hdd_set_conparam(con_mode);
 
-	errno = wlan_hdd_state_ctrl_param_create();
+ 	errno = pld_init();
 	if (errno) {
-		hdd_err("Failed to create ctrl param; errno:%d", errno);
+		hdd_fln("Failed to init PLD; errno:%d", errno);
 		goto wakelock_destroy;
-	}
-
-	errno = pld_init();
-	if (errno) {
-		hdd_err("Failed to init PLD; errno:%d", errno);
-		goto param_destroy;
 	}
 
 	hdd_driver_mode_change_register();
@@ -16363,7 +16386,8 @@ static int hdd_driver_load(void)
 		goto pld_deinit;
 	}
 
-	hdd_debug("%s: driver loaded", WLAN_MODULE_NAME);
+	hdd_loaded = true;
+	pr_info("%s: driver loaded\n", WLAN_MODULE_NAME);
 
 	return 0;
 
@@ -16375,14 +16399,8 @@ pld_deinit:
 	osif_driver_sync_wait_for_ops(driver_sync);
 
 	hdd_driver_mode_change_unregister();
-	pld_deinit();
+ 	pld_deinit();
 
-	hdd_start_complete(errno);
-	/* Wait for any ref taken on /dev/wlan to be released */
-	while (qdf_atomic_read(&wlan_hdd_state_fops_ref))
-		;
-param_destroy:
-	wlan_hdd_state_ctrl_param_destroy();
 wakelock_destroy:
 	qdf_wake_lock_destroy(&wlan_wake_lock);
 comp_deinit:
@@ -16497,10 +16515,13 @@ static void hdd_driver_unload(void)
  */
 static int hdd_module_init(void)
 {
-	if (hdd_driver_load())
-		return -EINVAL;
+	int ret;
 
-	return 0;
+	ret = wlan_hdd_state_ctrl_param_create();
+	if (ret)
+		pr_err("wlan_hdd_state_create:%x\n", ret);
+
+	return ret;
 }
 
 /**
