@@ -11,3 +11,6 @@ header-y += midi.h
 header-y += tmc.h
 header-y += usb_ctrl_qti.h
 header-y += video.h
+
+no-export-headers += f_accessory.h
+no-export-headers += f_mtp.h
