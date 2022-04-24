@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2016, 2019, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2016, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -784,7 +784,7 @@ int __msm_jpeg_release(struct msm_jpeg_device *pgmn_dev)
 		return -EINVAL;
 	}
 	pgmn_dev->open_count--;
-	mutex_unlock(&pgmn_dev->lock);
+	//mutex_unlock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0- */
 
 	msm_jpeg_core_release(pgmn_dev);
 	msm_jpeg_q_cleanup(&pgmn_dev->evt_q);
@@ -799,6 +799,8 @@ int __msm_jpeg_release(struct msm_jpeg_device *pgmn_dev)
 
 	/* release the platform resources */
 	msm_jpeg_platform_release(pgmn_dev);
+
+	mutex_unlock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 
 	JPEG_DBG("%s:%d]\n", __func__, __LINE__);
 
@@ -1314,8 +1316,10 @@ long __msm_jpeg_compat_ioctl(struct msm_jpeg_device *pgmn_dev,
 		break;
 
 	case MSM_JPEG_IOCTL_INPUT_BUF_ENQUEUE:
+		mutex_lock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		rc = msm_jpeg_input_buf_enqueue(pgmn_dev,
 			(void __user *) arg);
+		mutex_unlock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		break;
 
 	case MSM_JPEG_IOCTL_INPUT_BUF_ENQUEUE32:
@@ -1323,18 +1327,24 @@ long __msm_jpeg_compat_ioctl(struct msm_jpeg_device *pgmn_dev,
 		if (rc < 0)
 			break;
 		set_fs(KERNEL_DS);
+		mutex_lock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		rc = msm_jpeg_input_buf_enqueue(pgmn_dev,
 			(void __user *) &jpeg_buf);
+		mutex_unlock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		set_fs(old_fs);
 		break;
 
 	case MSM_JPEG_IOCTL_INPUT_GET:
+		mutex_lock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		rc = msm_jpeg_input_get(pgmn_dev, (void __user *) arg);
+		mutex_unlock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		break;
 
 	case MSM_JPEG_IOCTL_INPUT_GET32:
 		set_fs(KERNEL_DS);
+		mutex_lock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		rc = msm_jpeg_input_get(pgmn_dev, (void __user *) &jpeg_buf);
+		mutex_unlock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		set_fs(old_fs);
 		if (rc < 0)
 			break;
@@ -1347,8 +1357,10 @@ long __msm_jpeg_compat_ioctl(struct msm_jpeg_device *pgmn_dev,
 		break;
 
 	case MSM_JPEG_IOCTL_OUTPUT_BUF_ENQUEUE:
+		mutex_lock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		rc = msm_jpeg_output_buf_enqueue(pgmn_dev,
 			(void __user *) arg);
+		mutex_unlock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		break;
 
 	case MSM_JPEG_IOCTL_OUTPUT_BUF_ENQUEUE32:
@@ -1356,18 +1368,24 @@ long __msm_jpeg_compat_ioctl(struct msm_jpeg_device *pgmn_dev,
 		if (rc < 0)
 			break;
 		set_fs(KERNEL_DS);
+		mutex_lock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		rc = msm_jpeg_output_buf_enqueue(pgmn_dev,
 			(void __user *) &jpeg_buf);
+		mutex_unlock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		set_fs(old_fs);
 		break;
 
 	case MSM_JPEG_IOCTL_OUTPUT_GET:
+		mutex_lock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		rc = msm_jpeg_output_get(pgmn_dev, (void __user *) arg);
+		mutex_unlock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		break;
 
 	case MSM_JPEG_IOCTL_OUTPUT_GET32:
 		set_fs(KERNEL_DS);
+		mutex_lock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		rc = msm_jpeg_output_get(pgmn_dev, (void __user *) &jpeg_buf);
+		mutex_unlock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		set_fs(old_fs);
 		if (rc < 0)
 			break;
@@ -1465,12 +1483,16 @@ long __msm_jpeg_ioctl(struct msm_jpeg_device *pgmn_dev,
 		break;
 
 	case MSM_JPEG_IOCTL_INPUT_BUF_ENQUEUE:
+		mutex_lock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		rc = msm_jpeg_input_buf_enqueue(pgmn_dev,
 			(void __user *) arg);
+		mutex_unlock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		break;
 
 	case MSM_JPEG_IOCTL_INPUT_GET:
+		mutex_lock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		rc = msm_jpeg_input_get(pgmn_dev, (void __user *) arg);
+		mutex_unlock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		break;
 
 	case MSM_JPEG_IOCTL_INPUT_GET_UNBLOCK:
@@ -1478,12 +1500,16 @@ long __msm_jpeg_ioctl(struct msm_jpeg_device *pgmn_dev,
 		break;
 
 	case MSM_JPEG_IOCTL_OUTPUT_BUF_ENQUEUE:
+		mutex_lock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		rc = msm_jpeg_output_buf_enqueue(pgmn_dev,
 			(void __user *) arg);
+		mutex_unlock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		break;
 
 	case MSM_JPEG_IOCTL_OUTPUT_GET:
+		mutex_lock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		rc = msm_jpeg_output_get(pgmn_dev, (void __user *) arg);
+		mutex_unlock(&pgmn_dev->lock); /* MM-AL-ApplyQCT1922157.patch-0+ */
 		break;
 
 	case MSM_JPEG_IOCTL_OUTPUT_GET_UNBLOCK:
@@ -1522,46 +1548,6 @@ long __msm_jpeg_ioctl(struct msm_jpeg_device *pgmn_dev,
 	return rc;
 }
 
-static void msm_jpeg_iommu_fault_handler (struct iommu_domain *domain,
-	struct device *dev, unsigned long iova, int flags, void *token)
-{
-	struct msm_jpeg_device *pgmn_dev;
-
-	if (token) {
-		pgmn_dev = token;
-		JPEG_PR_ERR("%s: core type %d addr 0x%lx\n",
-			__func__, pgmn_dev->core_type, iova);
-		JPEG_PR_ERR("%s: FE ion_fd %d y_addr 0x%x y_len %d\n",
-			__func__,
-			pgmn_dev->fe_pingpong_buf.buf[1].ion_fd,
-			pgmn_dev->fe_pingpong_buf.buf[1].y_buffer_addr,
-			pgmn_dev->fe_pingpong_buf.buf[1].y_len);
-		JPEG_PR_ERR("%s: FE cbcr_addr %x cbcr_len %d\n",
-			__func__,
-			pgmn_dev->fe_pingpong_buf.buf[1].cbcr_buffer_addr,
-			pgmn_dev->fe_pingpong_buf.buf[1].cbcr_len);
-		JPEG_PR_ERR("%s: FE pln2_addr %x pln2_len %d frame_len %d\n",
-			__func__,
-			pgmn_dev->fe_pingpong_buf.buf[1].pln2_addr,
-			pgmn_dev->fe_pingpong_buf.buf[1].pln2_len,
-			pgmn_dev->fe_pingpong_buf.buf[1].framedone_len);
-		JPEG_PR_ERR("%s: WE ion_fd %d y_addr 0x%x y_len %d\n",
-			__func__,
-			pgmn_dev->we_pingpong_buf.buf[0].ion_fd,
-			pgmn_dev->we_pingpong_buf.buf[0].y_buffer_addr,
-			pgmn_dev->we_pingpong_buf.buf[0].y_len);
-		JPEG_PR_ERR("%s: WE  cbcr_addr %x cbcr_len %d\n",
-			__func__,
-			pgmn_dev->we_pingpong_buf.buf[0].cbcr_buffer_addr,
-			pgmn_dev->we_pingpong_buf.buf[0].cbcr_len);
-		JPEG_PR_ERR("%s: WE pln2_addr %x pln2_len %d frame_len %d\n",
-			__func__,
-			pgmn_dev->we_pingpong_buf.buf[0].pln2_addr,
-			pgmn_dev->we_pingpong_buf.buf[0].pln2_len,
-			pgmn_dev->we_pingpong_buf.buf[0].framedone_len);
-	}
-}
-
 int __msm_jpeg_init(struct msm_jpeg_device *pgmn_dev)
 {
 	int rc = 0;
@@ -1594,12 +1580,6 @@ int __msm_jpeg_init(struct msm_jpeg_device *pgmn_dev)
 				__func__);
 		goto err_smmu;
 	}
-
-	cam_smmu_reg_client_page_fault_handler(
-			pgmn_dev->iommu_hdl,
-			msm_jpeg_iommu_fault_handler,
-			NULL,
-			pgmn_dev);
 
 	/* setup all the resources for the jpeg driver */
 	rc = msm_jpeg_platform_setup(pgmn_dev);
