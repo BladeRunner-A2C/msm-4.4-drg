@@ -4,8 +4,8 @@
 # Copyright (C) 2020-2021 Adithya R.
 
 # Setup getopt.
-long_opts="regen,clean,homedir:,tcdir:"
-getopt_cmd=$(getopt -o rch:t: --long "$long_opts" \
+long_opts="regen,clean,sdclang,homedir:,tcdir:"
+getopt_cmd=$(getopt -o rcsh:t: --long "$long_opts" \
             -n $(basename $0) -- "$@") || \
             { echo -e "\nError: Getopt failed. Extra args\n"; exit 1;}
 
@@ -15,6 +15,7 @@ while true; do
     case "$1" in
         -r|--regen|r|regen) FLAG_REGEN_DEFCONFIG=y;;
         -c|--clean|c|clean) FLAG_CLEAN_BUILD=y;;
+        -s|--sdclang|s|sdclang) FLAG_SDCLANG_BUILD=y;;
         -h|--homedir|h|homedir) HOME_DIR="$2"; shift;;
         -t|--tcdir|t|tcdir) TC_DIR="$2"; shift;;
         -o|--outdir|o|outdir) OUT_DIR="$2"; shift;;
@@ -57,11 +58,16 @@ if test -z "$(git rev-parse --show-cdup 2>/dev/null)" &&
         ZIPNAME="${ZIPNAME::-4}-$(echo $head | cut -c1-8).zip"
 fi
 CLANG_DIR="$TC_DIR/clang-r416183b1"
+SDCLANG_DIR="$TC_DIR/sdclang-12/compiler"
 GCC_64_DIR="$TC_DIR/aarch64-linux-android-4.9"
 GCC_32_DIR="$TC_DIR/arm-linux-androideabi-4.9"
 DEFCONFIG="vendor/drg-perf_defconfig"
 
+if [ "$FLAG_SDCLANG_BUILD" = 'y' ]; then
+export PATH="$SDCLANG_DIR/bin:$PATH"
+else
 export PATH="$CLANG_DIR/bin:$PATH"
+fi
 
 # Regenerate defconfig, if requested so
 if [ "$FLAG_REGEN_DEFCONFIG" = 'y' ]; then
@@ -81,7 +87,11 @@ mkdir -p $OUT_DIR
 make O=$OUT_DIR ARCH=arm64 $DEFCONFIG
 
 echo -e "\nStarting compilation...\n"
+if [ "$FLAG_SDCLANG_BUILD" = 'y' ]; then
+make -j"$(nproc --all)" O=$OUT_DIR ARCH=arm64 CC=clang HOSTCC=$CLANG_DIR/bin/clang CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=$GCC_64_DIR/bin/aarch64-linux-android- CROSS_COMPILE_ARM32=$GCC_32_DIR/bin/arm-linux-androideabi- Image.gz-dtb
+else
 make -j"$(nproc --all)" O=$OUT_DIR ARCH=arm64 CC=clang CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=$GCC_64_DIR/bin/aarch64-linux-android- CROSS_COMPILE_ARM32=$GCC_32_DIR/bin/arm-linux-androideabi- Image.gz-dtb
+fi
 
 if [ -f "$OUT_DIR/arch/arm64/boot/Image.gz-dtb" ]; then
 	echo -e "\nKernel compiled succesfully! Zipping up...\n"
