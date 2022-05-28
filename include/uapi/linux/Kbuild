@@ -249,6 +249,7 @@ endif
 ifneq ($(wildcard $(srctree)/arch/$(SRCARCH)/include/uapi/asm/kvm_para.h \
 		  $(srctree)/arch/$(SRCARCH)/include/asm/kvm_para.h),)
 header-y += kvm_para.h
+endif
 
 no-export-headers += bcache.h
 no-export-headers += cryptouser.h
