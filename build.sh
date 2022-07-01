@@ -90,7 +90,7 @@ echo -e "\nStarting compilation...\n"
 if [ "$FLAG_SDCLANG_BUILD" = 'y' ]; then
 make -j"$(nproc --all)" O=$OUT_DIR ARCH=arm64 CC=clang HOSTCC=$CLANG_DIR/bin/clang CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=$GCC_64_DIR/bin/aarch64-linux-android- CROSS_COMPILE_ARM32=$GCC_32_DIR/bin/arm-linux-androideabi- Image.gz-dtb
 else
-make -j"$(nproc --all)" O=$OUT_DIR ARCH=arm64 CC=clang CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=$GCC_64_DIR/bin/aarch64-linux-android- CROSS_COMPILE_ARM32=$GCC_32_DIR/bin/arm-linux-androideabi- Image.gz-dtb
+make -j"$(nproc --all)" O=$OUT_DIR ARCH=arm64 CC=clang LD=ld.lld AS=llvm-as AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip CROSS_COMPILE=$GCC_64_DIR/bin/aarch64-linux-android- CROSS_COMPILE_ARM32=$GCC_32_DIR/bin/arm-linux-androideabi- CLANG_TRIPLE=aarch64-linux-gnu- Image.gz-dtb
 fi
 
 if [ -f "$OUT_DIR/arch/arm64/boot/Image.gz-dtb" ]; then
