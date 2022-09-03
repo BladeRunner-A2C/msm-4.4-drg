@@ -1,4 +1,4 @@
- #!/bin/bash
+#!/bin/bash
 #
 # Compile script for QuicksilveR kernel
 # Copyright (C) 2020-2023 Adithya R.
@@ -55,8 +55,8 @@ if test -z "$(git rev-parse --show-cdup 2>/dev/null)" &&
         ZIPNAME="${ZIPNAME::-4}-$(echo $head | cut -c1-8).zip"
 fi
 
-CLANG_DIR="$TC_DIR/clang-r416183b1"
-SDCLANG_DIR="$TC_DIR/sdclang-12/compiler"
+CLANG_DIR="$TC_DIR/clang-r450784d"
+SDCLANG_DIR="$TC_DIR/sdclang-14/compiler"
 AK3_DIR="$HOME/AnyKernel3"
 DEFCONFIG="vendor/drg-perf_defconfig"
 
