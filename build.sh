@@ -48,8 +48,8 @@ else
 fi
 echo -e "Out directory is at $OUT_DIR\n"
 
-export KBUILD_BUILD_USER=007
-export KBUILD_BUILD_HOST=skyfall
+export KBUILD_BUILD_USER=punisher
+export KBUILD_BUILD_HOST=nidavellir
 
 SECONDS=0 # builtin bash timer
 ZIPNAME="QuicksilveR-drg-$(date '+%Y%m%d-%H%M').zip"
@@ -58,7 +58,7 @@ if test -z "$(git rev-parse --show-cdup 2>/dev/null)" &&
         ZIPNAME="${ZIPNAME::-4}-$(echo $head | cut -c1-8).zip"
 fi
 CLANG_DIR="$TC_DIR/clang-r450784d"
-SDCLANG_DIR="$TC_DIR/sdclang-12/compiler"
+SDCLANG_DIR="$TC_DIR/sdclang-14/compiler"
 GCC_64_DIR="$TC_DIR/aarch64-linux-android-4.9"
 GCC_32_DIR="$TC_DIR/arm-linux-androideabi-4.9"
 DEFCONFIG="vendor/drg-perf_defconfig"
@@ -67,6 +67,19 @@ if [ "$FLAG_SDCLANG_BUILD" = 'y' ]; then
 export PATH="$SDCLANG_DIR/bin:$PATH"
 else
 export PATH="$CLANG_DIR/bin:$PATH"
+fi
+
+MAKE_PARAMS="O=$OUT_DIR ARCH=arm64 CC=clang \
+	HOSTLD=ld.lld LD=ld.lld AR=llvm-ar AS=llvm-as NM=llvm-nm \
+	OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip \
+	CROSS_COMPILE=$GCC_64_DIR/bin/aarch64-linux-android- \
+	CROSS_COMPILE_ARM32=$GCC_32_DIR/bin/arm-linux-androideabi- \
+	CLANG_TRIPLE=aarch64-linux-gnu- Image.gz-dtb"
+
+if [ "$FLAG_SDCLANG_BUILD" = 'y' ]; then
+MAKE_PARAMS+=" HOSTCC=$CLANG_DIR/bin/clang"
+else
+MAKE_PARAMS+=" HOSTCC=clang"
 fi
 
 # Regenerate defconfig, if requested so
@@ -87,11 +100,7 @@ mkdir -p $OUT_DIR
 make O=$OUT_DIR ARCH=arm64 $DEFCONFIG
 
 echo -e "\nStarting compilation...\n"
-if [ "$FLAG_SDCLANG_BUILD" = 'y' ]; then
-make -j"$(nproc --all)" O=$OUT_DIR ARCH=arm64 CC=clang HOSTCC=$CLANG_DIR/bin/clang CLANG_TRIPLE=aarch64-linux-gnu- CROSS_COMPILE=$GCC_64_DIR/bin/aarch64-linux-android- CROSS_COMPILE_ARM32=$GCC_32_DIR/bin/arm-linux-androideabi- Image.gz-dtb
-else
-make -j"$(nproc --all)" O=$OUT_DIR ARCH=arm64 CC=clang LD=ld.lld AS=llvm-as AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip CROSS_COMPILE=$GCC_64_DIR/bin/aarch64-linux-android- CROSS_COMPILE_ARM32=$GCC_32_DIR/bin/arm-linux-androideabi- CLANG_TRIPLE=aarch64-linux-gnu- Image.gz-dtb
-fi
+make -j"$(nproc --all)" $MAKE_PARAMS
 
 if [ -f "$OUT_DIR/arch/arm64/boot/Image.gz-dtb" ]; then
 	echo -e "\nKernel compiled succesfully! Zipping up...\n"
